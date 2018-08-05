@@ -4,7 +4,7 @@ var bodyParser = require('body-parser');
 var {mongoose} = require('./db/mongoose');
 var {Todo} = require('./models/todo');
 var {User} = require('./models/user');
-
+var {ObjectID} = require('mongodb');
 var app = express();
 app.use(bodyParser.json());
 
@@ -15,31 +15,41 @@ app.post('/todos',(req,res)=>{
 
     todo.save().then((doc)=>{
         res.send(doc);
-    }, (err)=>{
+    }, (e)=>{
        res.status(400).send(e);
     });
+});
+
+app.get('/todos', (req,res)=>{
+    Todo.find({}).then((todos)=>{
+        res.send({
+            todos
+        });
+    }, (e)=>{
+        res.status(400).send(e);
+    });
+});
+
+//GET /todos/5b66dcb95478940ebc80720a
+app.get('/todos/:id', (req,res)=>{
+    const id = req.params.id;
+    //valid id using isValid
+    //404 - send back empty value
+    if(!ObjectID.isValid(id)){
+       return res.status(404).send();
+    }
+    Todo.findById(id).then((todo)=>{
+        if(!todo){
+          return  res.status(404).send();
+        }
+        res.send({todo});
+    })
+    .catch((e)=> res.status(400).send());
+
 });
 
 app.listen(3000, ()=>{
     console.log('Started on port 3000');
 });
-// var newTodo = new Todo({
-//     text:'   Learn  NodeJS  '
-// });
 
-// newTodo.save().then((doc)=>{
-//     console.log(JSON.stringify(doc,undefined,2) );
-// }, (err)=>{
-//     console.log('Unable to save data',err);
-// });
-
-
-// var newUser = new User({
-//     email:' ntn641998@gmail.com'
-// });
-
-// newUser.save().then((doc)=>{
-//     console.log(JSON.stringify(doc,undefined,2) );
-// }, (err)=>{
-//     console.log('Unable to save data',err);
-// });
+module.exports = {app,Todo};
