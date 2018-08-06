@@ -97,6 +97,61 @@ describe('GET /todos/:id', ()=>{
         .expect((res)=>{
             expect(res.body.todo.text).toBe(todos[0].text);
         })
+        .end((done));
+    });
+});
+
+describe('DELETE /todos/:id', ()=>{
+    it ('should get data by valid id',(done)=>{
+        const idHex = todos[0]._id.toHexString();
+        request(app)
+        .delete(`/todos/${idHex}`)
+        .expect(200)
+        .expect((res)=>{
+            expect(res.body.todo._id).toBe(idHex);
+        })
+        .end((err,res)=>{
+            if (err){
+                return done(err);
+            }
+            Todo.findById(idHex).then((todo)=>{
+                expect(todo).toBeFalsy();
+                done();
+            }).catch((e)=> done(e));
+        });
+    });
+    it('should return 404 if todo not found',(done)=>{
+        const idHex = new ObjectID();
+        request(app)
+        .delete(`/todos/${idHex}`)
+        .expect(404)
         .end(done);
     });
+    it('should return 404 if object ID is invalid',(done)=>{
+        request(app)
+        .delete(`/todos/123tests`)
+        .expect(404)
+        .end(done);
+    });
+});
+
+describe('PATCH /todos/:id',()=>{
+    it('should update to todo',(done)=>{
+        const idHex = todos[0]._id.toHexString();
+        const text = "Testing update with PATCH";
+        request(app)
+        .patch(`/todos/${idHex}`)
+        .send({
+            text, 
+            completed:true
+        })
+        .expect(200)
+        .expect((res)=>{
+            expect(res.body.todo.text).toBe(text);
+            expect(res.body.todo.completed).toBe(true);
+            expect(typeof res.body.todo.completeAt).toBe('number');
+        })
+        .end(done);
+    });
+
 });
